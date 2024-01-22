@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top menu item 
+        groups="group_hr_manager,group_hr_user,base.group_user"
+        web_icon="hr,static/description/icon.png" 
+    -->
+    <menuitem
+        id="menu_ccomercial_root"
+        name="Certificados"
+        sequence="75" groups="group_operaciones_precios,group_operaciones_manager,group_operaciones_user"/>
+
+    <record model="ir.cron" id="ccomercial_data_reminder">
+        <field name="name">HR Vencimiento Certificado Comercial</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="model" eval="'hr.certificado.comercial'"/>
+        <field name="function" eval="'mail_reminder'"/>
+        <field name="args" eval="'()'" />
+    </record>
+
+    <record model='ir.ui.view' id='certificado_comercial_form_view'>
+        <field name="name">hr.certificado.comercial.form</field>
+        <field name="model">hr.certificado.comercial</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="dpto_ref" invisible="not context.get('dpto_visible')" string="Instalacion"/>
+                            <field name="employee_ref" invisible="0" string="Responsable"/>
+                            <field name="name" string="N.Cert"/>
+                            <field name="document_name" string="Act. Fundamental"/>
+                            <field name="otra_actividad" string="Otra Actividad"/>
+                            <label for ="tomo" string="Tomo, Folio, Asiento"/>
+                            <div class="address_format">
+                                <field name="tomo" style="width : 33%" />
+                                <field name="folio" style="width : 33%" />
+                                <field name="asiento" style="width : 33%" />
+                            </div>
+                            <field name="doc_attachment_id" widget="many2many_binary" class="oe_inline"/>
+                        </group>
+                        <group>
+                            <field name="issue_date"/>
+                            <field name="expiry_date"/>
+                            <field name="mensaje"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Observaciones">
+                            <field name="description"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model='ir.ui.view' id='certificado_comercial_tree_view'>
+        <field name="name">hr.certificado.comercial.tree</field>
+        <field name="model">hr.certificado.comercial</field>
+        <field name="arch" type="xml">
+            <tree string="Cerificados Comerciales" decoration-danger="dias&lt;90">
+                <field name="dpto_ref" invisible="not context.get('dpto_visible')" string="Instalación"/>
+                <field name="name" string="Referencia"/>
+                <field name="direccion" string="Dirección"/>
+                <field name="document_name" string="Act. Fundamental"/>
+                <field name="issue_date"/>
+                <field name="expiry_date"/>
+                <field name="mensaje"/>
+                <field name="dias" string="Dias restantes" invisible="0"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="hr_certificado_comercial_inherit_form_view">
+        <field name="name">hr.ccomercial.form.view</field>
+        <field name="model">hr.department</field>
+        <field name="inherit_id" ref="hr.view_department_form"/>
+        <field name="groups_id" eval="[(6, 0, [ref('certificado_comercial.group_operaciones_precios'),ref('certificado_comercial.group_operaciones_manager'),ref('group_operaciones_user')])]"/>
+        <field name="arch" type="xml">
+            <div class="oe_button_box" position="inside">
+                <button class="oe_stat_button" name="document_view" type="object" icon="fa-list-ol" attrs ="{'invisible':[('tipo','!=','venta')]}">
+                    <field string="Certificados" name="document_count" widget="statinfo"/>
+                </button>
+            </div>
+            <group>
+                <field name="tipo"/>
+                <field name="direccion"/>
+            </group>
+            
+            <xpath expr="//field[@name='parent_id']" position="replace">
+                <field name="parent_id" string="Subordinado a:"/>
+            </xpath> 
+        </field>
+    </record>
+
+    <!-- Vista para hacer read-only los campos para Operaciones/Precios -->
+
+    <record model="ir.ui.view" id="certificado_comercial_final_form_view">
+        <field name="name">ccomercial.final.form.view</field>
+        <field name="model">hr.department</field>
+        <field name="inherit_id" ref="certificado_comercial.hr_certificado_comercial_inherit_form_view"/>
+        <field name="groups_id" eval="[(6, 0, [ref('certificado_comercial.group_operaciones_precios')])]"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="replace">
+                <field name="name" attrs="{'readonly':True}" string='Instalacion'/>
+            </xpath>
+            <xpath expr="//field[@name='parent_id']" position="replace">
+                <field name="parent_id" attrs="{'readonly':True}" string='Subordinado a:'/>
+            </xpath>
+            <xpath expr="//field[@name='manager_id']" position="replace">
+                <field name="manager_id" attrs="{'readonly':True}" string='Responsable'/>
+            </xpath>
+            <xpath expr="//field[@name='tipo']" position="replace">
+                <field name="tipo" attrs="{'readonly':True}"/>
+            </xpath>            
+            <xpath expr="//field[@name='active']" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="hr_certificado_comercial_inherit_tree_view">
+        <field name="name">hr.ccomercial.dpto.tree.view</field>
+        <field name="model">hr.department</field>
+        <field name="inherit_id" ref="hr.view_department_tree"/>
+        <field name="groups_id" eval="[(6, 0, [ref('certificado_comercial.group_operaciones_precios'),ref('certificado_comercial.group_operaciones_manager'),ref('group_operaciones_user')])]"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='display_name']" position="after">
+                <field name="document_count" string="Cant. de Certificados"/>
+            </xpath> 
+            <xpath expr="//field[@name='parent_id']" position="replace">
+                <field name="parent_id" string="Subordinado a"/>
+            </xpath> 
+        </field>
+    </record>
+
+    <record id="dpto_ccomercial_filter" model="ir.ui.view">
+        <field name="name">dpto.ccomercial.search</field>
+        <field name="model">hr.department</field>
+        <field name="inherit_id" ref="hr.view_department_filter"/>
+        <field name="groups_id" eval="[(6, 0, [ref('certificado_comercial.group_operaciones_precios'),ref('certificado_comercial.group_operaciones_manager'),ref('group_operaciones_user')])]"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='manager_id']" position="after">
+                <field name="parent_id" string="Subordinado a:"/>
+                <filter name="group_division_id" string="Divisiones" icon="terp-partner" context="{'group_by':'parent_id'}"/>
+                <filter string="Con Certificados" name="concer" domain="[('document_count','&gt;',0)]"/>
+                <filter string="Sin Certificados" name="sincer" domain="[('document_count','=',0)]"/>
+            </xpath> 
+        </field>
+    </record>    
+    
+    <record id="view_ccomercial_filter" model="ir.ui.view">
+        <field name="name">hr.ccomercial.search</field>
+        <field name="model">hr.certificado.comercial</field>
+        <field name="arch" type="xml">
+            <search string="Certificados Comerciales">
+                <field name="name"/>
+                <field name="dpto_ref"/>
+                <filter string="Por vencer" name="por_vencer" domain="[('dias','&lt;',90)]"/>
+                <filter string="Vencidos" name="vencidos" domain="[('dias','&lt;',0)]"/>
+                <filter name="group_dpto_ref" string="Departamento" icon="terp-partner" context="{'group_by':'dpto_ref'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="hr_employee_ccomercial_inherit_form_view">
+        <field name="name">hr.employee.ccomercial.form.view</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='job_id']" position="after">
+                <field name="es_precios_dpto"/>
+            </xpath>
+        </field>
+    </record>
+
+
+
+    <record id="open_view_ccomercial_list" model="ir.actions.act_window">
+        <field name="name">Certificados</field>
+        <field name="res_model">hr.certificado.comercial</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" eval="False"/>
+        <field name="search_view_id" ref="view_ccomercial_filter"/>
+        <field name="context">{'dpto_visible': True}</field>
+    </record>  
+
+    <record id="open_view_ccomercial_dpto" model="ir.actions.act_window">
+        <field name="name">Instalaciones</field>
+        <field name="res_model">hr.department</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" eval="False"/>
+    </record>  
+
+    <record id="cc_report_model_action" model="ir.actions.act_window">
+        <field name="name">Reportes EXCEL</field>
+        <field name="res_model">xlsx_report_base.basic_report_model</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">kanban</field>
+        <field name="domain">[('modules','=','Certificados')]</field>
+        <field name="search_view_id" ref="xlsx_report_base.xlsx_report_base_basic_report_model_search"/>
+    </record>
+
+    <menuitem  id="menu_ccomercial_main" name="Certificados Comerciales" action="open_view_ccomercial_list" parent="menu_ccomercial_root" sequence="0" groups="group_operaciones_precios,group_operaciones_manager,group_operaciones_user"/>   
+    <menuitem  id="menu_ccomercial_dpto" name="Instalaciones" action="open_view_ccomercial_dpto" parent="menu_ccomercial_root" sequence="10" groups="group_operaciones_precios,group_operaciones_manager,group_operaciones_user"/>           
+    <menuitem id="cc_report_menus" name="Reportes en EXCEL" parent="menu_ccomercial_root" action="cc_report_model_action" sequence="120" />
+
+</odoo>
